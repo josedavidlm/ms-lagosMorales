@@ -7,5 +7,6 @@ import lombok.Setter;
 @Setter
 public class RequestPersona {
     private String tipoDoc;
+    private String tipoPer;
     private String numDoc;
 }

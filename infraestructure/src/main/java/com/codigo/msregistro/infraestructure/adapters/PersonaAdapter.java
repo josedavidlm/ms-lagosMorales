@@ -7,9 +7,11 @@ import com.codigo.msregistro.domain.aggregates.response.ResponseReniec;
 import com.codigo.msregistro.domain.ports.out.PersonaServiceOut;
 import com.codigo.msregistro.infraestructure.entity.PersonaEntity;
 import com.codigo.msregistro.infraestructure.entity.TipoDocumentoEntity;
+import com.codigo.msregistro.infraestructure.entity.TipoPersonaEntity;
 import com.codigo.msregistro.infraestructure.mapper.PersonaMapper;
 import com.codigo.msregistro.infraestructure.repository.PersonaRepository;
 import com.codigo.msregistro.infraestructure.repository.TipoDocumentoRepository;
+import com.codigo.msregistro.infraestructure.repository.TipoPersonaRepository;
 import com.codigo.msregistro.infraestructure.rest.client.ClienteReniec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ public class PersonaAdapter implements PersonaServiceOut {
 
     private final PersonaRepository personaRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
+    private final TipoPersonaRepository tipoPersonaRepository;
     private final PersonaMapper personaMapper;
     private final ClienteReniec reniec;
 
@@ -60,8 +63,8 @@ public class PersonaAdapter implements PersonaServiceOut {
         if(existe){
             Optional<PersonaEntity> entity = personaRepository.findById(id);
             ResponseReniec responseReniec = getExecutionReniec(requestPersona.getNumDoc());
-            personaRepository.save(getEntityUpdate(responseReniec,entity.get()));
-            return personaMapper.mapToDto(getEntityUpdate(responseReniec,entity.get()));
+            personaRepository.save(getEntityUpdate(responseReniec,entity.get(),requestPersona));
+            return personaMapper.mapToDto(getEntityUpdate(responseReniec,entity.get(),requestPersona));
         }
         return null;
     }
@@ -87,6 +90,7 @@ public class PersonaAdapter implements PersonaServiceOut {
     }
     private PersonaEntity getEntity(ResponseReniec reniec, RequestPersona requestPersona){
         TipoDocumentoEntity tipoDocumento = tipoDocumentoRepository.findByCodTipo(requestPersona.getTipoDoc());
+        TipoPersonaEntity tipoPersona = tipoPersonaRepository.findByCodTipo(requestPersona.getTipoPer());
         PersonaEntity entity = new PersonaEntity();
         entity.setNumDocu(reniec.getNumeroDocumento());
         entity.setNombres(reniec.getNombres());
@@ -96,14 +100,19 @@ public class PersonaAdapter implements PersonaServiceOut {
         entity.setUsuaCrea(Constants.AUDIT_ADMIN);
         entity.setDateCreate(getTimestamp());
         entity.setTipoDocumento(tipoDocumento);
+        entity.setTipoPersona(tipoPersona);
         return entity;
     }
-    private PersonaEntity getEntityUpdate(ResponseReniec reniec, PersonaEntity personaActualizar){
+    private PersonaEntity getEntityUpdate(ResponseReniec reniec, PersonaEntity personaActualizar,RequestPersona requestPersona){
+        TipoDocumentoEntity tipoDocumento = tipoDocumentoRepository.findByCodTipo(requestPersona.getTipoDoc());
+        TipoPersonaEntity tipoPersona = tipoPersonaRepository.findByCodTipo(requestPersona.getTipoPer());
         personaActualizar.setNombres(reniec.getNombres());
         personaActualizar.setApePat(reniec.getApellidoPaterno());
         personaActualizar.setApeMat(reniec.getApellidoMaterno());
         personaActualizar.setUsuaModif(Constants.AUDIT_ADMIN);
         personaActualizar.setDateModif(getTimestamp());
+        personaActualizar.setTipoDocumento(tipoDocumento);
+        personaActualizar.setTipoPersona(tipoPersona);
         return personaActualizar;
     }
     private Timestamp getTimestamp(){
